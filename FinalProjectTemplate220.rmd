@@ -1,0 +1,254 @@
+---
+title: "ECON 320 Final Project"
+author: "Alvin Huezo"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: 
+  prettydoc::html_pretty:
+    theme: cayman
+  html_document: 
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gapminder)
+library(knitr)
+library(gtools)
+library(gganimate)
+library(kableExtra)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(prettydoc)
+library(plotly)
+library(lattice)
+library(plotrix)
+library(ggfortify)
+library(stargazer)
+## Load your packages here , your packages will be hidden but make sure that you mention which packages you used in your document
+```
+
+
+
+
+# Introduction and Motivation:
+
+**My research is looking into how many hours (whether it is in class or outside class) does it take for students to feel a sense of being generally "busy". My research focuses specifically on full-time Emory students and their individual time spent on extracurriculars and academics.**
+
+
+**This is an interesting question because not only can we observe the combination of hours spent working with hours spent in class, but we can also analyze the correlation, if any, on whether more hours working decreases the amount of credits enrolled, or vice versa. It will also be interesting to see whether a sense of being "busy" is completly subjective, or if there is a certain numer of hours spent on work or school that influences this feeling.**
+
+**Usually in most college settings, students will have a tendency to be occupied with their lives and feel like they are constantly doing something. Most students will state that they feel "busy" but we will observe just how many hours are used for productivity like school and work and whether the sense of feeling "busy" stems from not prioritizing time.**
+
+ 
+![Alt text](/Users/aleja/Desktop/ECON 220 LAB/chart6.jpg)
+
+> This pie chart shows the average time sent for full-time university students from 2011-2015. We can see here that apart from sleeping, leisure and sports is the  biggest portion, followed by Educational activities. These two slices represent the extracurriculars hours and credit hours enrolled, respectfully, in my survey. Adding up the top three portions of the pie graph, They account for about 60% of a day in the life of a full-time college student.
+
+
+
+![Alt text](/Users/aleja/Desktop/ECON 220 LAB/chart7.jpg)
+
+>This graph compares full-time students to part-time students when it comes to percentage of time spent on "Educational Activities" throughout the day. It seems to be common sense that students who are taking more classes would spend more time on "Education Activities", thus it seems almost useless to have this graph here. However, this graph is imperative in solidifying the fact that those enrolled in more credit hours (full-time students > part-time students) would be more occupied than those enrolled in less credit hours and thus would have less hours committed to work and extracurriculars. Now it is a matter of observing whether that same pattern follows with the data I have collected.
+
+
+![Alt text](/Users/aleja/Desktop/ECON 220 LAB/chart8.jpg)
+
+>This bar graph is the compliment to the graph above, where we are now comparing students who spend more time in the work/extracurriculars section vs the academic section. From the graph, one can see that students who worked longer hours tend to spend less time in "Educational" activities, "Sports,exercise, & recreation", but more time "Working".
+
+
+
+
+
+
+[This article](https://www.scpr.org/news/2015/02/05/49673/college-students-report-more-stress-less-time-to-s/) contains insightful narratives from college students about the feeling of stress from concentrating on school and work. This article is interesting because it raises an idea that students nowadays have more pressure than their parents to succeed and must commit more time to their studies and work.
+Another interesting point that this article brought up was that college students owadays have a tendency to glorify stress and the sense of being overwhelmed with a feeling of being "busy". It will be interesting to see whether that is the case with my data and if Emory students emit this similar behavior.
+
+
+
+# The Dataset 
+
+ 
+**The data I gathered was through a survey to Emory students enrolled in one of the Econ220 LABS in the Fall semester of 2019.**
+
+<span style="color:green">1.Do you feel like you have a busy schedule?</span>
+
+<span style="color:green">2.How many hours a week do you spend on extracurricular activities (including work)?</span>
+
+<span style="color:green">3.How many credit hours are you currently enrolled in?</span>
+
+**I believe these questions to properly capture the information I am looking for because I will be able to create subgroups and identify correlations with the data gathered. For example, because I gathered information concerning how many credits students are enrolled in, I not only know who is a part-time student/full-time student, but I also know which students are overloading in their course load. With my data cleaning process, I have assigned shorter column names to represent the questions asked in the survey. "Feel Busy" will refer to Question 1, "Work Hours" refers to Question 2, and "Credit Hours" refers to the Question 3. **
+
+**For all intents and purposes, when I refer to "Work Hours" I am not just including employment, but also work-study, and time commitment to extracurriculars and clubs.**
+
+
+```{r, results='hide'}
+Econ220DataF2019_ano <- read.csv("C:/Users/aleja/Desktop/ECON 220 LAB/Econ220DataF2019_ano.csv")
+
+#Renamed the data to be easier to type out
+Prodata<-Econ220DataF2019_ano 
+data.frame(table(Prodata$V55))
+
+#I limited the data to the specific colunms that are assigned to the questions I asked and relate to my research. Using the drop=false function to keep my data as a dataframe instead of a list or vector
+Mydata<-as.data.frame(Prodata[,54:56], drop=false)
+
+#I changed values that include characters to numeric numbers. This was to remove all characters from my 55 coulumn since many students put hours or h to represent hours. I also had one student use the plus sign to indicate more than 10 hours
+Mydata[Mydata=="2h"]<-"2"
+Mydata[Mydata=="10+ hours"]<-"10"
+
+#I used the compliment of a set to remove the the 66th row since all values throughout were NA and would not contribute to my research. 38 and 54 had the value of one for "credit hours" enrolled which is an obvious typo. Thus, I removed them as well to not affect my data.
+Mydata<-Mydata[-c(66,38,54),]
+
+
+#to stay organized and clean my data further, I renamed the column names based on my questions
+colnames(Mydata)[colnames(Mydata)=="q54"] <- "Feel Busy"
+colnames(Mydata)[colnames(Mydata)=="q55"] <- "Work Hours"
+colnames(Mydata)[colnames(Mydata)=="q56"] <- "Credit Hours"
+
+
+
+Mydata$`Work Hours`<-as.numeric(Mydata$`Work Hours`)
+table(Mydata$`Work Hours`)
+
+Overload<-subset(Mydata, `Credit Hours`> 19)
+Nload<-subset(Mydata, `Credit Hours`<= 19)
+
+avgwork<-mean(Mydata$`Work Hours`)
+avgcredit<-mean(Mydata$`Credit Hours`)
+avgvec<-c(avgwork,avgcredit)
+avgvectitle<-c("Work Hours 45% ","Credit Hours 55%")
+
+
+YesBusy<-subset(Mydata,Mydata$`Feel Busy` == "Yes, I do.")
+NoBusy<-subset(Mydata,Mydata$`Feel Busy` == "No, I don't.")
+
+#Here do you data cleaning SHOW THE CODE HIDE THE RESULTS
+```
+
+```{r}
+#Here summary stats and some graphs, SHOW BOTH CODE AND RESULTS
+kable(Mydata) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "center") %>%
+    kable_styling(bootstrap_options = "condensed") %>%
+    kable_styling(bootstrap_options = "bordered") %>%
+    scroll_box(width = "900px", height = "300px")
+
+
+stargazer(Mydata[c(2:3)], type = "html",summary.stat=c("mean","median","min","max","sd"),digits=2)
+ 
+
+barg<-ggplot(Mydata, aes(`Credit Hours`,`Work Hours` , fill=`Feel Busy`)) + geom_bar(stat = "identity", position = "dodge", width = .5) + ylim(0,25) + geom_text(aes(label=`Work Hours`),vjust=-0.3, size=3.5)
+barg
+
+Yesani<-ggplot(YesBusy, aes(`Work Hours`, `Credit Hours`), order=TRUE, levels(`Work Hours`)) + ggtitle("Credit Hours and Work Hours for Students who Feel Busy") +
+  geom_jitter(alpha = 1/5, size = 2, colour = "red") + xlim(0,30) + geom_hline(yintercept=19)
+Noani<-ggplot(NoBusy, aes(`Work Hours`, `Credit Hours`)) + ggtitle("Credit Hours and Work Hours for Students who do NOT Feel Busy") +
+  geom_jitter(alpha = 1/3, size = 3, colour = "blue")  + geom_hline(yintercept=19) 
+Yesani
+Noani
+
+
+bxp <- ggplot(Mydata, aes(`Work Hours`, `Credit Hours`, col=terrain.colors(1))) + guides(fill=FALSE)+ ggtitle("Credit Hours and Work Hours for all Students") +
+ geom_boxplot(aes(fill = )) + theme_gray() + transition_states(`Work Hours`, transition_length = 1, state_length = 100) + shadow_mark(past = TRUE, future = FALSE)
+bxp 
+
+
+
+
+```
+
+# Analysis, Confidence Intervals and Testing
+
+```{r}
+
+pairs(Mydata[2:3])
+
+(deciles<-seq(0,1, by=0.1))
+quantile(Mydata$`Work Hours`, deciles, na.rm=TRUE)
+
+(deciles<-seq(0,1, by=0.1))
+quantile(Mydata$`Credit Hours`, deciles, na.rm=TRUE)
+
+
+ggdistribution(dnorm, Mydata$`Credit Hours`, mean = 0, sd = 1)
+
+
+pie3D(avgvec,labels=avgvectitle,explode=0.1,
+   main="Ratio of Work and School Hours\n for Emory Students", radius = 2.2)
+
+ggplot(Mydata, aes(`Work Hours`, `Credit Hours`)) +
+  geom_jitter() +
+  geom_smooth(se = FALSE, method = "lm",span = 0.3) +
+  facet_wrap(~`Feel Busy`)
+
+ggplot(YesBusy, mapping=aes(x=`Work Hours`, y=`Credit Hours`)) +
+  geom_point() + geom_density2d()+ggtitle("Student Combination of Work Hours and Credit Hours") + theme(plot.title = element_text(size=13))
+```
+
+
+
+
+
+
+# Correlations for Different Subgroups
+```{r}
+Mydata%>%
+    select(`Work Hours`,`Credit Hours`)%>% 
+    cor()%>% 
+    kable(type="html",digits=3)%>%
+    kable_styling(bootstrap_options="responsive",full_width=F)%>% 
+    column_spec(1,bold=T)%>% 
+    add_header_above(c("General Correlation"=3))
+
+Overload%>%
+    select(`Work Hours`,`Credit Hours`)%>% 
+    cor()%>% 
+    kable(type="html",digits=3)%>%
+    kable_styling(bootstrap_options="responsive",full_width=F)%>% 
+    column_spec(1,bold=T)%>% 
+    add_header_above(c(" Credit-Overload and Work Hours Correlation"=3))
+
+Nload%>%
+    select(`Work Hours`,`Credit Hours`)%>% 
+    cor()%>% 
+    kable(type="html",digits=3)%>%
+    kable_styling(bootstrap_options="responsive",full_width=F)%>% 
+    column_spec(1,bold=T)%>% 
+    add_header_above(c(" Normal Credit Load and Work Hours Correlation"=3))
+
+YesBusy%>%
+    select(`Work Hours`,`Credit Hours`)%>% 
+    cor()%>% 
+    kable(type="html",digits=3)%>%
+    kable_styling(bootstrap_options="responsive",full_width=F)%>% 
+    column_spec(1,bold=T)%>% 
+    add_header_above(c("Correlation for Students do Feel Busy"=3))
+
+NoBusy%>%
+    select(`Work Hours`,`Credit Hours`)%>% 
+    cor()%>% 
+    kable(type="html",digits=3)%>%
+    kable_styling(bootstrap_options="responsive",full_width=F)%>% 
+    column_spec(1,bold=T)%>% 
+    add_header_above(c("Correlation for Students who do NOT Feel Busy"=3))
+```
+
+# Conclusion
+
+Through my analysis, I observed that there is no actually correlation with feeling of being busy and any combination of hours spent working/on extracurriculars, The feeling of being busy is subjective based on the data I gathered. 
+
+However, it was interesting to note tht the most significant correlation I was able to find was for students that are overloading (taking more than 19 credits) tended to also spend a significant amount of time working and in extracurriculars. This information supports the article that i referenced in the beggining about students seeking to occupy their time as much as possible. College students nowadays feel the need to secure their future even going as far as sacrificing a significant portion of their time daily. Of course, my hypothesis could be incorrect and it could be that students that are overloading just tend to be more structured and organized with their time management and can effectively juggle their commitments. More research is needed.
+
+I also noted that on average students are enrolled in 17 credit hours and work(including extracurriculars) on avg 14 hours.
+
+I do not think the results would have changed if I had a bigger sample size. However, I do think the results would be altered if I had data from a different population. I say this because it is more likely the declared major for the population leans towards Economics. Not all majors are the same, and I believe that because some majors are more strict and require more dedication, the ratio of time spent working/extracurriculars and time spent in class/educational activities would be different.
+
+If I were to do this project all over again, I would make sure to survey not just students enrolled in "Statistics for Econ Majors," but open up the pool to all Emory students since I aim to collect data and reach conclusions for Emory students as a whole. I would also make my questions more specific which will lead to more questions and thus, more columns. Having more information will help me have less error in my data. For example, some students sleep more than hours and thus have less hours overall in their daily schedule to be working or taking classes. Being able to gather more relevant information like this, as well as differentiating work and extracurriculars can lead to more complex and insightful data analysis and conclusions. 
+
+# References
+<https://nces.ed.gov/programs/coe/pdf/coe_ssa.pdf>
+
+<https://www.scpr.org/news/2015/02/05/49673/college-students-report-more-stress-less-time-to-s>
+
+<https://www.bls.gov/tus/charts/students.htm>
